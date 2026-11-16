@@ -1,9 +1,44 @@
-import React from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import Header from '../components/Header'
 import { FaSearch } from 'react-icons/fa'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { getHomeBooksAPI } from '../../services/allAPI'
+import {searchContext} from '../../contextAPI/ShareContext'
+import { ToastContainer, toast } from 'react-toastify';
+
 
 function Home() {
+  const navigate = useNavigate()
+  const {searchKey,setSearchKey} = useContext(searchContext)
+  const [homeBooks, setHomeBooks] = useState([])
+
+  console.log(searchKey);
+  
+  useEffect(()=>{
+    getHomeBooks()
+  },[])
+
+  const getHomeBooks = async()=>{
+    const result = await getHomeBooksAPI()
+    if(result.status==200){
+      setHomeBooks(result.data)
+    }
+  }
+
+  const handleSearch = ()=>{
+    if(!searchKey){
+      toast.warning("Please Input a Book Title ")
+    }else if(!sessionStorage.getItem("token")){
+      toast.warning("Please Login to Explore More...!!")
+      setTimeout(() => {
+        navigate("/login")
+      }, 2000);
+    }else if(searchKey && sessionStorage.getItem("token")){
+      navigate('/books')
+    }else{
+      toast.error("Somthing Went Wrong!!!")
+    }
+  }
   return (
     <>
       <Header/>
@@ -12,8 +47,8 @@ function Home() {
       <div style={{height:'500px',backgroundColor:'rgba(0,0,0,0.4)'}} className='w-full flex flex-col justify-center items-center'>
       <h1 className='text-6xl font-bold'>Wonderful Books</h1>
       <p>Gift your family and friends a book</p>
-      <input type="text" placeholder='Search a book' className='bg-white p-2 rounded-3xl w-100 text-black mt-2' />
-      <FaSearch className='text-gray-500 cursor-pointer' style={{marginTop:'-28px',marginLeft:'360px'}} />
+      <input onChange={(e)=>setSearchKey(e.target.value)} type="text" placeholder='Search a book' className='bg-white p-2 rounded-3xl w-100 text-black mt-2' />
+      <FaSearch onClick={handleSearch} className='text-gray-500 cursor-pointer' style={{marginTop:'-28px',marginLeft:'360px'}} />
       </div>
        </div>
        {/* new arrivals */}
@@ -22,14 +57,21 @@ function Home() {
         <h1 className='text-3xl my-2'>Explore Our Letest Collection</h1>
         <div className='md:grid grid-cols-4 md:my-0'>
           {/* duplicate cards */}
-          <div className='shadow rounded p-3 m-4 md:my-0'>
-            <img width={'100%'} height={'300px'} src="https://dryuc24b85zbr.cloudfront.net/tes/resources/6441170/image?width=500&height=500&version=1474643904786" alt="" />
-            <div className='flex flex-col justify-center items-center mt-4'>
-              <h2 className='text-blue-600 font-bold text-xl'>Author</h2>
-              <h3 className='text-lg'>Title</h3>
-              <p className='text-red-500 font-bold'>Price</p>
-            </div>
-          </div>
+          {
+            homeBooks.length>0 ?
+            homeBooks.map(book=>( 
+              <div key={book?._id} className='shadow rounded p-3 m-4 md:my-0'>
+                <img width={'100%'} height={'300px'} src={book?.imageURL} alt="" />
+                  <div className='flex flex-col justify-center items-center mt-4'>
+                    <h2 className='text-blue-600 font-bold text-xl'>{book?.author}</h2>
+                    <h3 className='text-lg'>{book?.title}</h3>
+                    <p className='text-red-500 font-bold'>₹{book?.discontPrice}</p>
+                  </div>
+              </div>
+            ))
+            :
+            <p className='font-bold text-center my-3'>Loading....</p>
+          }
         </div>
         {/* button */}
         <div className='text-center my-10'>
@@ -67,7 +109,8 @@ function Home() {
         </div>
 
        </section>
-
+      {/* toast container */}
+      <ToastContainer position='top-center' theme='colored' autoClose={3000}/>
     </>
   )
 }

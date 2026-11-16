@@ -1,10 +1,43 @@
-import React, { useState } from 'react'
-import { FaFacebookF, FaInstagram, FaTwitter, FaUser } from 'react-icons/fa'
+import React, { useContext, useEffect, useState } from 'react'
+import { FaFacebookF, FaInstagram, FaPowerOff, FaTwitter, FaUser } from 'react-icons/fa'
+import { FaGear } from 'react-icons/fa6'
 import { HiMenu } from 'react-icons/hi'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import axiosInstance from '../../api/axiosinstance'
+import { routeContext } from '../../contextAPI/RouteGaurd'
 
 function Header() {
+
+  const {role,setRole,autherisedUser,setAutherisedUser} = useContext(routeContext)
+  
   const [toggle,setToggle] = useState(false)
+  const[token,setToken]=useState("")
+  const[dp,setDp]=useState("")
+  const[userId,setUserId]=useState("")
+  const[dropDown,setDropDown]=useState(false)
+  const navigate = useNavigate()
+
+  useEffect(()=>{
+    if(sessionStorage.getItem("token")&& sessionStorage.getItem('user')){
+       const userToken = sessionStorage.getItem("token")
+       const user = JSON.parse(sessionStorage.getItem("user")) 
+       console.log(user.picture);
+       setToken(userToken)
+       setDp(user.picture)
+       setUserId(user._id)
+    }
+  },[token])
+
+  const logout = ()=>{
+    sessionStorage.clear()
+    setAutherisedUser(false)
+    setToggle(false)
+    setToken("")
+    setDp("")
+    setUserId("")
+    setDropDown(false)
+    navigate('/')
+  }
   return (
     <>
     {/* header top part */}
@@ -24,15 +57,49 @@ function Header() {
         <FaTwitter  className='mx-2'/>
         <FaFacebookF />
         {/* logo links */}
+       { 
+       ! token ?
         <Link to={'/login'} className='border border-black rounded px-3 ms-3 flex items-center'><FaUser className='me-1' />Login</Link>
+       :
+       <div>
+          <button onClick={()=>{setDropDown(!dropDown)}} className='shadow-sm rounded p-1 hover:bg-gray-100'>
+            <img width={'40px'} height={'40px'} style={{borderRadius:'50%'}} src= {dp=="" ? "https://static.vecteezy.com/system/resources/previews/019/879/186/non_2x/user-icon-on-transparent-background-free-png.png" : dp.startsWith("https://lh3.googleusercontent.com/")?dp : `${axiosInstance.defaults.baseURL}/uploads/${dp}`} alt="Profile  " />
+          </button>
+          {/* dropdown menu */}
+         {
+          dropDown &&
+           <div className='absolute right-0 z-10mt-2 w-40 bg-white shadow rounded ring-1 ring-black/5 p-2 focus:outline-hidden'>
+            <Link to={`/profile/${userId}`} className='flex items-center text-gray-800 text-sm px-3 py-2 '><FaGear className='me-1'/>Profile</Link>
+            <button onClick={logout} className='flex items-center text-gray-800 text-sm px-3 py-2'><FaPowerOff className='me-1'/>Logout</button>
+          </div>
+         }
+       </div>
+      }
       </div>
     </div>
     {/* navigation part */}
     <nav className='bg-black w-full p-3 text-white md:flex justify-center items-center'>
-      {/* menu icon */}
+      {/* menu icon login button */}
       <div className='flex justify-between items-center text-2xl py-2 md:hidden'>
         <button onClick={()=>setToggle(!toggle)}><HiMenu /></button>
-         <Link to={'/login'} className='border border-black rounded px-3 ms-3 flex items-center hover:bg-white hover:text-black'><FaUser className='me-1' />Login</Link>
+        {
+          !token ?
+           <Link to={'/login'} className='border border-black rounded px-3 ms-3 flex items-center hover:bg-white hover:text-black'><FaUser className='me-1' />Login</Link>
+           :
+             <div>
+              <button onClick={()=>{setDropDown(!dropDown)}} className='shadow-sm rounded p-1 hover:bg-gray-100'>
+                <img width={'40px'} height={'40px'} style={{borderRadius:'50%'}} src= {dp=="" ? "https://static.vecteezy.com/system/resources/previews/019/879/186/non_2x/user-icon-on-transparent-background-free-png.png" : dp.startsWith("https://lh3.googleusercontent.com/")?dp : `${axiosInstance.defaults.baseURL}/uploads/${dp}`} alt="Profile  " />
+              </button>
+          {/* dropdown menu */}
+         {
+          dropDown &&
+           <div className='absolute right-0 z-10mt-2 w-40 bg-white shadow rounded ring-1 ring-black/5 p-2 focus:outline-hidden'>
+            <Link to={`/profile/${userId}`} className='flex items-center text-gray-800 text-sm px-3 py-2 '><FaGear className='me-1'/>Profile</Link>
+            <button onClick={logout} className='flex items-center text-gray-800 text-sm px-3 py-2'><FaPowerOff className='me-1'/>Logout</button>
+          </div>
+         }
+       </div>
+        }
       </div>
       <ul className={toggle?'flex flex-col':'md:flex hidden'}>
         <li><Link to={'/'} className='md:mx-4 mt-2 md:mt-0'> HOME </Link></li>
